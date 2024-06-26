@@ -36,6 +36,9 @@ class Tuto
     #[ORM\OneToMany(targetEntity: Chapter::class, mappedBy: 'Tuto')]
     private Collection $chapters;
 
+    #[ORM\Column]
+    private ?int $position = null;
+
     public function __construct()
     {
         $this->chapters = new ArrayCollection();
@@ -132,6 +135,18 @@ class Tuto
                 $chapter->setTuto(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getPosition(): ?int
+    {
+        return $this->position;
+    }
+
+    public function setPosition(int $position): static
+    {
+        $this->position = $position;
 
         return $this;
     }
