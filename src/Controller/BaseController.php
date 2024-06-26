@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Entity\Tuto;
 use App\Service\EntityFetcher;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -38,8 +39,20 @@ abstract class BaseController extends AbstractController
     #[Route("/create", methods: ["POST"])]
     public function create(Request $request): JsonResponse
     {
-        return new JsonResponse(['error' => 'Not implemented'], 501);
-        // Logique de création (à compléter)
+        //dd($request->request->all());
+        foreach ($request->request->all() as $key => $value) {
+            if ($value === '' || $value === null) {
+                return new JsonResponse(['error' => 'Missing field: ' . $key], 400);
+            }
+        }
+
+        $data = $this->entityFetcher->create($this->entityClass, $request->request->all());
+
+        $response = [
+            'message' => 'Entity created',
+            'data' => $data
+        ];
+        return new JsonResponse($response, 201);
     }
 
     #[Route("/update/{id}", methods: ["PUT"])]
