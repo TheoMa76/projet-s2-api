@@ -70,6 +70,11 @@ class EntityFetcher
             }
         }
 
+        $typeErrors = $this->checkPropertyTypes($entity, $data);
+        if (!empty($typeErrors)) {
+            trigger_error('Type mismatch: ' . implode(', ', $typeErrors), E_USER_ERROR);
+        }
+
         $reflectionClass = new ReflectionClass($entity);
         foreach ($ignoredProperties as $property) {
             if ($reflectionClass->hasProperty($property)) {
@@ -112,7 +117,6 @@ class EntityFetcher
             if (!in_array($property->getName(), $ignoredProperties)) {
                 $property->setAccessible(true);
 
-                // Lire les attributs de la propriété
                 $attributes = $property->getAttributes(Column::class);
                 foreach ($attributes as $attribute) {
                     $attributeInstance = $attribute->newInstance();
@@ -125,10 +129,85 @@ class EntityFetcher
         return $nullableProperties;
     }
 
+    private function checkPropertyTypes($entity, array $data): array
+    {
+        $reflectionClass = new ReflectionClass($entity);
+        $properties = $reflectionClass->getProperties();
+        $typeErrors = [];
 
+        foreach ($properties as $property) {
+            $propertyName = $property->getName();
+            if (array_key_exists($propertyName, $data)) {
+                $property->setAccessible(true);
+                $expectedType = $property->getType();
+                $value = $data[$propertyName];
 
+                if ($expectedType && !$this->isTypeValid($expectedType, $value)) {
+                    $typeErrors[] = $propertyName . ' expected type ' . $expectedType . ', but got ' . gettype($value);
+                }
+            }
+        }
+        return $typeErrors;
+    }
+
+    private function isTypeValid(\ReflectionType $expectedType, &$value): bool
+    {
+        $typeName = $expectedType->getName();
+
+        if ($expectedType->allowsNull() && $value === null) {
+            return true;
+        }
+
+        switch ($typeName) {
+            case 'int':
+                if (is_int($value)) {
+                    return true;
+                } elseif (is_numeric($value) && intval($value) == $value) {
+                    $value = (int) $value;
+                    return true;
+                }
+                break;
+
+            case 'float':
+                if (is_float($value)) {
+                    return true;
+                } elseif (is_numeric($value)) {
+                    $value = (float) $value;
+                    return true;
+                }
+                break;
+
+            case 'string':
+                if (is_string($value)) {
+                    return true;
+                } elseif (is_scalar($value)) {
+                    $value = (string) $value;
+                    return true;
+                }
+                break;
+
+            case 'bool':
+                if (is_bool($value)) {
+                    return true;
+                } elseif (in_array(strtolower($value), ['true', 'false', '1', '0'], true)) {
+                    $value = filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+                    return $value !== null;
+                }
+                break;
+
+            case 'array':
+                return is_array($value);
+
+            default:
+                if ($value instanceof $typeName) {
+                    return true;
+                }
+                break;
+        }
+
+        return false;
+    }
     
-
     private function entityToArray($entity): array
     {
         $reflectionClass = new ReflectionClass($entity);
