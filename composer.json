@@ -11,13 +11,17 @@
         "doctrine/doctrine-bundle": "*",
         "doctrine/doctrine-migrations-bundle": "^3.3",
         "doctrine/orm": "^3.2",
+        "friendsofsymfony/rest-bundle": "^3.7",
+        "jms/serializer-bundle": "^5.4",
+        "lexik/jwt-authentication-bundle": "^3.0",
         "symfony/console": "7.1.*",
         "symfony/dotenv": "7.1.*",
         "symfony/flex": "^2",
         "symfony/framework-bundle": "7.1.*",
         "symfony/runtime": "7.1.*",
         "symfony/security-bundle": "7.1.*",
-        "symfony/yaml": "7.1.*"
+        "symfony/yaml": "7.1.*",
+        "symfonycasts/verify-email-bundle": "^1.17"
     },
     "config": {
         "allow-plugins": {
