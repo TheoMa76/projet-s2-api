@@ -15,6 +15,6 @@ class ChapterController extends BaseController
 
     public function __construct(EntityFetcher $entityFetcher)
     {
-        parent::__construct($entityFetcher);
+        parent::__construct($entityFetcher, $this->entityClass);
     }
 }

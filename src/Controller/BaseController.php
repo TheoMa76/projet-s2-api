@@ -14,9 +14,11 @@ abstract class BaseController extends AbstractController
     protected $entityFetcher;
     protected $entityClass;
 
-    public function __construct(EntityFetcher $entityFetcher)
+    public function __construct(EntityFetcher $entityFetcher, string $entityClass)
     {
         $this->entityFetcher = $entityFetcher;
+        $entityFetcher->setEntityClass($this->entityClass);
+        $this->entityClass = $entityClass;
     }
 
     #[Route('/', methods: ['GET'])]
@@ -29,7 +31,7 @@ abstract class BaseController extends AbstractController
     #[Route("/find/{id}", methods: ["GET"])]
     public function find($id): JsonResponse
     {
-        $data = $this->entityFetcher->find($this->entityClass, $id);
+        $data = $this->entityFetcher->find($id);
         if ($data === null) {
             return new JsonResponse(['error' => 'Entity not found'], 404);
         }
@@ -38,36 +40,36 @@ abstract class BaseController extends AbstractController
 
     #[Route("/create", methods: ["POST"])]
     public function create(Request $request): JsonResponse
-    {
-        //dd($request->request->all());
-        foreach ($request->request->all() as $key => $value) {
-            if ($value === '' || $value === null) {
-                return new JsonResponse(['error' => 'Missing field: ' . $key], 400);
-            }
-        }
-
-        $data = $this->entityFetcher->create($this->entityClass, $request->request->all());
+    {   
+        $data = $this->entityFetcher->create($request->request->all());
 
         $response = [
             'message' => 'Entity created',
             'data' => $data
         ];
-        return new JsonResponse($response, 201);
+        return new JsonResponse($response, 200);
     }
 
     #[Route("/update/{id}", methods: ["PUT"])]
-    public function update($id, Request $request): JsonResponse
+    public function update(Request $request,$id): JsonResponse
     {
-        return new JsonResponse(['error' => 'Not implemented'], 501);
+        $data = $this->entityFetcher->update($id,$request->request->all());
+        $response = [
+            'message' => 'Entity updated',
+            'data' => $data
+        ];
+        return new JsonResponse($response, 200);
 
-        // Logique de mise à jour (à compléter)
     }
 
     #[Route("/delete/{id}", methods: ["DELETE"])]
     public function delete($id): JsonResponse
     {
-        return new JsonResponse(['error' => 'Not implemented'], 501);
-
-        // Logique de suppression (à compléter)
+        $data = $this->entityFetcher->delete($id);
+        $response = [
+            'message' => 'Entity deleted',
+            'idDeleted' => $id,
+        ];
+        return new JsonResponse($response, 200);
     }
 }

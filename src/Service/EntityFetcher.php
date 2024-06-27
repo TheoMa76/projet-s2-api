@@ -2,23 +2,29 @@
 
 namespace App\Service;
 
-use Doctrine\Common\Annotations\AnnotationReader;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Mapping\Column;
+use PhpParser\Builder\Class_;
 use ReflectionClass;
 
 class EntityFetcher
 {
     private $entityManager;
+    private $entityClass;
 
     public function __construct(EntityManagerInterface $entityManager)
     {
         $this->entityManager = $entityManager;
     }
 
-    public function getAll(string $entityClass): array
+    public function setEntityClass(string $entityClass)
     {
-        $repository = $this->entityManager->getRepository($entityClass);
+        $this->entityClass = $entityClass;
+    }
+
+    public function getAll(): array
+    {
+        $repository = $this->entityManager->getRepository($this->entityClass);
         $entities = $repository->findAll();
 
         $data = [];
@@ -29,37 +35,89 @@ class EntityFetcher
         return $data;
     }
 
-    public function find(string $entityClass, $id): ?array
+    /**
+     * @return object|array
+     */
+    public function find($id, $convertToArray = true) 
     {
-        $repository = $this->entityManager->getRepository($entityClass);
+        $repository = $this->entityManager->getRepository($this->entityClass);
         $entity = $repository->find($id);
 
         if (!$entity) {
             return null;
         }
 
-        return $this->entityToArray($entity);
+        if ($convertToArray) {
+            return $this->entityToArray($entity);
+        }else{
+            return $entity;
+        }
     }
 
-    public function findBy(string $entityClass, array $criteria): array
+    /**
+     * @return object|array
+     */
+    public function findBy(array $criteria,$convertToArray = true): array
     {
-        $repository = $this->entityManager->getRepository($entityClass);
+        $repository = $this->entityManager->getRepository($this->entityClass);
         $entities = $repository->findBy($criteria);
 
         $data = [];
         foreach ($entities as $entity) {
-            $data[] = $this->entityToArray($entity);
+            if ($convertToArray) {
+                $data[] = $this->entityToArray($entity);
+            }else{
+                $data[] = $entity;
+            }
         }
 
         return $data;
     }
 
-    public function create(string $entityClass, array $data): array
+    public function create(array $data): array
     {
-        $entity = new $entityClass();
+
+        $entity = new $this->entityClass();
+        $entity = $this->checkRequirement($entity, $data);
+
+        $this->entityManager->persist($entity);
+        $this->entityManager->flush();
+
+        return $this->entityToArray($entity);
+    }
+
+    public function update($id, array $data){
+        $entity = $this->find($id,false);
+        if (!$entity) {
+            throw new \Exception("Entity not found.");
+        }
+        $entity = $this->checkRequirement($entity, $data);
+
+        $this->entityManager->persist($entity);
+        $this->entityManager->flush();
+
+        return $this->entityToArray($entity);
+    }
+
+    public function delete($id){
+        $entity = $this->find($id,false);
+        if (!$entity) {
+            throw new \Exception("Entity not found.");
+        }
+        $this->entityManager->remove($entity);
+        $this->entityManager->flush();
+    }
+    
+
+    private function checkRequirement($entity,array $data,$addIgnoredProperties = []){
+        $typeErrors = $this->checkPropertyTypes($entity, $data);
+        if (!empty($typeErrors)) {
+            trigger_error('Type mismatch: ' . implode(', ', $typeErrors), E_USER_ERROR);
+        }
         $this->setData($entity, $data);
 
         $ignoredProperties = ['created_at', 'updated_at', 'id'];
+        $ignoredProperties = array_merge($ignoredProperties, $addIgnoredProperties);
 
         $missingProperties = $this->getMissingProperties($entity, $ignoredProperties);
         if (!empty($missingProperties)) {
@@ -70,24 +128,7 @@ class EntityFetcher
             }
         }
 
-        $typeErrors = $this->checkPropertyTypes($entity, $data);
-        if (!empty($typeErrors)) {
-            trigger_error('Type mismatch: ' . implode(', ', $typeErrors), E_USER_ERROR);
-        }
-
-        $reflectionClass = new ReflectionClass($entity);
-        foreach ($ignoredProperties as $property) {
-            if ($reflectionClass->hasProperty($property)) {
-                $ignoredProperty = $reflectionClass->getProperty($property);
-                $ignoredProperty->setAccessible(true);
-                $ignoredProperty->setValue($entity, null);
-            }
-        }
-
-        $this->entityManager->persist($entity);
-        $this->entityManager->flush();
-
-        return $this->entityToArray($entity);
+        return $entity;
     }
 
     private function getMissingProperties($entity, array $ignoredProperties = []): array
@@ -162,7 +203,7 @@ class EntityFetcher
             case 'int':
                 if (is_int($value)) {
                     return true;
-                } elseif (is_numeric($value) && intval($value) == $value) {
+                } elseif (ctype_digit($value) && intval($value) == $value) {
                     $value = (int) $value;
                     return true;
                 }
@@ -222,12 +263,16 @@ class EntityFetcher
         return $data;
     }
 
-    private function setData($entity, array $data): void
-    {
+    private function setData($entity, array $data) {
+        $reflectionClass = new \ReflectionClass($entity);
         foreach ($data as $key => $value) {
-            $setter = 'set' . str_replace('_', '', ucwords($key, '_'));
-            $entity->$setter($value);
+            if ($reflectionClass->hasProperty($key)) {
+                $property = $reflectionClass->getProperty($key);
+                $property->setAccessible(true);
+                $property->setValue($entity, $value);
+            }
         }
     }
+    
 
 }

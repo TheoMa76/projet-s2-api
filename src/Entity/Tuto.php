@@ -24,9 +24,6 @@ class Tuto
     #[ORM\Column(length: 255)]
     private ?string $difficulty = null;
 
-    #[ORM\Column]
-    private ?float $progress_percentage = null;
-
     #[ORM\Column(length: 255)]
     private ?string $game = null;
 
@@ -81,18 +78,6 @@ class Tuto
     public function setDifficulty(string $difficulty): static
     {
         $this->difficulty = $difficulty;
-
-        return $this;
-    }
-
-    public function getProgressPercentage(): ?float
-    {
-        return $this->progress_percentage;
-    }
-
-    public function setProgressPercentage(float $progress_percentage): static
-    {
-        $this->progress_percentage = $progress_percentage;
 
         return $this;
     }
