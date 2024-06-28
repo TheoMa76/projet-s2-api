@@ -25,3 +25,7 @@ services:
     App\Service\EntityFetcher:
         arguments:
             $entityManager: '@doctrine.orm.entity_manager'
+
+    App\EventListener\RequestFormatListener:
+        tags:
+            - { name: kernel.event_listener, event: kernel.request, priority: 255 }

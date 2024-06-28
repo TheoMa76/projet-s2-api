@@ -21,7 +21,8 @@
         "symfony/runtime": "7.1.*",
         "symfony/security-bundle": "7.1.*",
         "symfony/yaml": "7.1.*",
-        "symfonycasts/verify-email-bundle": "^1.17"
+        "symfonycasts/verify-email-bundle": "^1.17",
+        "vich/uploader-bundle": "^2.3"
     },
     "config": {
         "allow-plugins": {
