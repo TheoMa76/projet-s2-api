@@ -41,7 +41,7 @@ abstract class BaseController extends AbstractController
     #[Route("/create", methods: ["POST"])]
     public function create(Request $request): JsonResponse
     {   
-        $data = $this->entityFetcher->create($request->request->all());
+        $data = $this->entityFetcher->create(json_decode($request->getContent(), true));
 
         $response = [
             'message' => 'Entity created',

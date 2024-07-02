@@ -30,7 +30,7 @@ class Tuto
     /**
      * @var Collection<int, Chapter>
      */
-    #[ORM\OneToMany(targetEntity: Chapter::class, mappedBy: 'Tuto')]
+    #[ORM\OneToMany(targetEntity: Chapter::class, mappedBy: 'Tuto', cascade: ['persist', 'remove'], orphanRemoval: true)]
     private Collection $chapters;
 
     #[ORM\Column]

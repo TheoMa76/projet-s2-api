@@ -2,6 +2,9 @@
 
 namespace App\Service;
 
+use App\Entity\Chapter;
+use App\Entity\Content;
+use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Mapping\Column;
 use PhpParser\Builder\Class_;
@@ -79,12 +82,15 @@ class EntityFetcher
 
         $entity = new $this->entityClass();
         $entity = $this->checkRequirement($entity, $data);
-
+        dd($entity);
+       
+        // Persister et retourner l'entité
         $this->entityManager->persist($entity);
         $this->entityManager->flush();
 
         return $this->entityToArray($entity);
     }
+
 
     public function update($id, array $data){
         $entity = $this->find($id,false);
@@ -110,12 +116,12 @@ class EntityFetcher
     
 
     private function checkRequirement($entity,array $data,$addIgnoredProperties = []){
-        $typeErrors = $this->checkPropertyTypes($entity, $data);
+        $data = $this->checkPropertyTypes($entity, $data);
         if (!empty($typeErrors)) {
             trigger_error('Type mismatch: ' . implode(', ', $typeErrors), E_USER_ERROR);
         }
         $this->setData($entity, $data);
-
+        
         $ignoredProperties = ['created_at', 'updated_at', 'id'];
         $ignoredProperties = array_merge($ignoredProperties, $addIgnoredProperties);
 
@@ -127,7 +133,6 @@ class EntityFetcher
                 trigger_error('Missing non-nullable properties: ' . implode(', ', $missingNonNullableProperties), E_USER_ERROR);
             }
         }
-
         return $entity;
     }
 
@@ -186,9 +191,14 @@ class EntityFetcher
                 if ($expectedType && !$this->isTypeValid($expectedType, $value)) {
                     $typeErrors[] = $propertyName . ' expected type ' . $expectedType . ', but got ' . gettype($value);
                 }
+                $data[$propertyName] = $value;
             }
         }
-        return $typeErrors;
+        if(!empty($typeErrors)){
+            trigger_error('Invalid Type : ' . implode(', ', $typeErrors), E_USER_ERROR);
+        }else{
+            return $data;
+        }
     }
 
     private function isTypeValid(\ReflectionType $expectedType, &$value): bool
@@ -238,7 +248,14 @@ class EntityFetcher
 
             case 'array':
                 return is_array($value);
-
+            case 'Doctrine\Common\Collections\Collection':
+                if(is_array($value)){
+                    $value = new ArrayCollection($value);
+                    return true;
+                }else if($value instanceof ArrayCollection){
+                    return true;
+                }
+                break;
             default:
                 if ($value instanceof $typeName) {
                     return true;
