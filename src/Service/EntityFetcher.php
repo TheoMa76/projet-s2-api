@@ -7,6 +7,7 @@ use App\Entity\Content;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Mapping\Column;
+use Exception;
 use PhpParser\Builder\Class_;
 use ReflectionClass;
 
@@ -82,7 +83,7 @@ class EntityFetcher
 
         $entity = new $this->entityClass();
         $entity = $this->checkRequirement($entity, $data);
-        dd($entity);
+        $this->setEntityForSubEntities($entity, $data);
        
         // Persister et retourner l'entité
         $this->entityManager->persist($entity);
@@ -180,16 +181,20 @@ class EntityFetcher
         $reflectionClass = new ReflectionClass($entity);
         $properties = $reflectionClass->getProperties();
         $typeErrors = [];
-
         foreach ($properties as $property) {
             $propertyName = $property->getName();
             if (array_key_exists($propertyName, $data)) {
                 $property->setAccessible(true);
                 $expectedType = $property->getType();
                 $value = $data[$propertyName];
-
-                if ($expectedType && !$this->isTypeValid($expectedType, $value)) {
-                    $typeErrors[] = $propertyName . ' expected type ' . $expectedType . ', but got ' . gettype($value);
+                if(!is_array($value)){
+                    if ($expectedType && !$this->isTypeValid($expectedType, $value)) {
+                        $typeErrors[] = $propertyName . ' expected type ' . $expectedType . ', but got ' . gettype($value);
+                    }
+                }else{
+                    if ($expectedType && !$this->isTypeValid($expectedType, $value, $propertyName)) {
+                        $typeErrors[] = $propertyName . ' expected type ' . $expectedType . ', but got ' . gettype($value);
+                    }
                 }
                 $data[$propertyName] = $value;
             }
@@ -201,7 +206,7 @@ class EntityFetcher
         }
     }
 
-    private function isTypeValid(\ReflectionType $expectedType, &$value): bool
+    private function isTypeValid(\ReflectionType $expectedType, &$value,$keyIfArray = null): bool
     {
         $typeName = $expectedType->getName();
 
@@ -251,6 +256,25 @@ class EntityFetcher
             case 'Doctrine\Common\Collections\Collection':
                 if(is_array($value)){
                     $value = new ArrayCollection($value);
+                    $i = 0;
+                    foreach ($value as $objectProperties) {
+                        $className = 'App\\Entity\\' .ucfirst(substr_replace($keyIfArray, '', -1));
+                        if (class_exists($className)) {
+                            $obj = new $className();
+                        }else{
+                            throw new Exception("Class $className does not exist");
+                        }
+                        foreach ($objectProperties as $property => $setValue) {
+                            $methodName = 'set' . ucfirst($property);
+                            if (method_exists($obj, $methodName)) {
+                                $obj->$methodName($setValue);
+                            }
+                        }
+                        $value->remove($i);
+                        $value[$i] = $obj;
+                        $i++;
+                    }
+                    $value->add($obj);
                     return true;
                 }else if($value instanceof ArrayCollection){
                     return true;
@@ -287,6 +311,18 @@ class EntityFetcher
                 $property = $reflectionClass->getProperty($key);
                 $property->setAccessible(true);
                 $property->setValue($entity, $value);
+            }
+        }
+    }
+
+    private function setEntityForSubEntities($entity, array $data){
+        $reflectionClass = new \ReflectionClass($entity);
+        dd($reflectionClass->getProperties());
+        foreach ($entity as $key => $value) {
+            var_dump($key);
+            if (class_exists($key)) {
+                $obj = new $className();
+                dd($obj);
             }
         }
     }
