@@ -83,8 +83,7 @@ class EntityFetcher
 
         $entity = new $this->entityClass();
         $entity = $this->checkRequirement($entity, $data);
-        $this->setEntityForSubEntities($entity, $data);
-       
+        //dd($entity);
         // Persister et retourner l'entité
         $this->entityManager->persist($entity);
         $this->entityManager->flush();
@@ -95,6 +94,7 @@ class EntityFetcher
 
     public function update($id, array $data){
         $entity = $this->find($id,false);
+
         if (!$entity) {
             throw new \Exception("Entity not found.");
         }
@@ -192,7 +192,7 @@ class EntityFetcher
                         $typeErrors[] = $propertyName . ' expected type ' . $expectedType . ', but got ' . gettype($value);
                     }
                 }else{
-                    if ($expectedType && !$this->isTypeValid($expectedType, $value, $propertyName)) {
+                    if ($expectedType && !$this->isTypeValid($expectedType, $value, $propertyName,$entity)) {
                         $typeErrors[] = $propertyName . ' expected type ' . $expectedType . ', but got ' . gettype($value);
                     }
                 }
@@ -206,7 +206,7 @@ class EntityFetcher
         }
     }
 
-    private function isTypeValid(\ReflectionType $expectedType, &$value,$keyIfArray = null): bool
+    private function isTypeValid(\ReflectionType $expectedType, &$value,$keyIfArray = null,$entity = null): bool
     {
         $typeName = $expectedType->getName();
 
@@ -254,29 +254,38 @@ class EntityFetcher
             case 'array':
                 return is_array($value);
             case 'Doctrine\Common\Collections\Collection':
-                if(is_array($value)){
+                if (is_array($value)) {
                     $value = new ArrayCollection($value);
                     $i = 0;
+                
                     foreach ($value as $objectProperties) {
-                        $className = 'App\\Entity\\' .ucfirst(substr_replace($keyIfArray, '', -1));
-                        if (class_exists($className)) {
-                            $obj = new $className();
-                        }else{
+                        $className = 'App\\Entity\\' . ucfirst(rtrim($keyIfArray, 's'));
+                
+                        if (!class_exists($className)) {
                             throw new Exception("Class $className does not exist");
                         }
+                
+                        $obj = new $className();
+                
                         foreach ($objectProperties as $property => $setValue) {
-                            $methodName = 'set' . ucfirst($property);
-                            if (method_exists($obj, $methodName)) {
-                                $obj->$methodName($setValue);
+                            $potentialClassName = 'App\\Entity\\' . ucfirst(rtrim($property, 's'));
+                
+                            if (is_array($setValue) && class_exists($potentialClassName)) {
+                                $subEntity = $this->createSubEntity($potentialClassName, $setValue);
+                                $this->addSubEntityToObject($obj, $property, $subEntity);
+                            } else {
+                                $this->setPropertyOnObject($obj, $property, $setValue);
                             }
                         }
+                
+                        $this->addEntityToCollection($entity, $keyIfArray, $obj);
                         $value->remove($i);
                         $value[$i] = $obj;
                         $i++;
                     }
-                    $value->add($obj);
+                
                     return true;
-                }else if($value instanceof ArrayCollection){
+                } elseif ($value instanceof ArrayCollection) {
                     return true;
                 }
                 break;
@@ -288,6 +297,74 @@ class EntityFetcher
         }
 
         return false;
+    }
+
+    /**
+     * Create a sub-entity and set its properties.
+     *
+     * @param string $className
+     * @param array $properties
+     * @return object
+     */
+    function createSubEntity(string $className, array $properties) {
+        $subEntity = new $className();
+
+        foreach ($properties as $property => $values) {
+            foreach ($values as $subProperty => $subValue) {
+                $methodName = 'set' . ucfirst($subProperty);
+
+                if (method_exists($subEntity, $methodName)) {
+                    $subEntity->$methodName($subValue);
+                }
+            }
+        }
+
+        return $subEntity;
+    }
+
+    /**
+     * Add a sub-entity to the main object.
+     *
+     * @param object $obj
+     * @param string $property
+     * @param object $subEntity
+     */
+    function addSubEntityToObject(object $obj, string $property, object $subEntity) {
+        $methodName = 'add' . ucfirst(rtrim($property, 's'));
+
+        if (method_exists($obj, $methodName)) {
+            $obj->$methodName($subEntity);
+        }
+    }
+
+    /**
+     * Set a property on the main object.
+     *
+     * @param object $obj
+     * @param string $property
+     * @param mixed $value
+     */
+    function setPropertyOnObject(object $obj, string $property, $value) {
+        $methodName = 'set' . ucfirst($property);
+
+        if (method_exists($obj, $methodName)) {
+            $obj->$methodName($value);
+        }
+    }
+
+    /**
+     * Add the main object to the collection.
+     *
+     * @param object $entity
+     * @param string $keyIfArray
+     * @param object $obj
+     */
+    function addEntityToCollection(object $entity, string $keyIfArray, object $obj) {
+        $methodName = 'add' . ucfirst(rtrim($keyIfArray, 's'));
+
+        if (method_exists($entity, $methodName)) {
+            $entity->$methodName($obj);
+        }
     }
     
     private function entityToArray($entity): array
@@ -314,18 +391,4 @@ class EntityFetcher
             }
         }
     }
-
-    private function setEntityForSubEntities($entity, array $data){
-        $reflectionClass = new \ReflectionClass($entity);
-        dd($reflectionClass->getProperties());
-        foreach ($entity as $key => $value) {
-            var_dump($key);
-            if (class_exists($key)) {
-                $obj = new $className();
-                dd($obj);
-            }
-        }
-    }
-    
-
 }

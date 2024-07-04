@@ -53,7 +53,7 @@ abstract class BaseController extends AbstractController
     #[Route("/update/{id}", methods: ["PUT"])]
     public function update(Request $request,$id): JsonResponse
     {
-        $data = $this->entityFetcher->update($id,$request->request->all());
+        $data = $this->entityFetcher->update($id,json_decode($request->getContent(), true));
         $response = [
             'message' => 'Entity updated',
             'data' => $data

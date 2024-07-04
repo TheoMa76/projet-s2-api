@@ -30,7 +30,7 @@ class Chapter
     /**
      * @var Collection<int, Content>
      */
-    #[ORM\OneToMany(targetEntity: Content::class, mappedBy: 'Chapter')]
+    #[ORM\OneToMany(targetEntity: Content::class, mappedBy: 'Chapter',cascade: ['persist', 'remove'], orphanRemoval: true)]
     private Collection $contents;
 
     public function __construct()
