@@ -83,7 +83,6 @@ class EntityFetcher
 
         $entity = new $this->entityClass();
         $entity = $this->checkRequirement($entity, $data);
-        //dd($entity);
         // Persister et retourner l'entité
         $this->entityManager->persist($entity);
         $this->entityManager->flush();
@@ -257,7 +256,6 @@ class EntityFetcher
                 if (is_array($value)) {
                     $value = new ArrayCollection($value);
                     $i = 0;
-                
                     foreach ($value as $objectProperties) {
                         $className = 'App\\Entity\\' . ucfirst(rtrim($keyIfArray, 's'));
                 
@@ -271,8 +269,10 @@ class EntityFetcher
                             $potentialClassName = 'App\\Entity\\' . ucfirst(rtrim($property, 's'));
                 
                             if (is_array($setValue) && class_exists($potentialClassName)) {
-                                $subEntity = $this->createSubEntity($potentialClassName, $setValue);
-                                $this->addSubEntityToObject($obj, $property, $subEntity);
+                                foreach($setValue as $key => $val){
+                                    $subEntity = $this->createSubEntity($potentialClassName, $val);
+                                    $this->addSubEntityToObject($obj, $property, $subEntity);
+                                }
                             } else {
                                 $this->setPropertyOnObject($obj, $property, $setValue);
                             }
@@ -308,17 +308,13 @@ class EntityFetcher
      */
     function createSubEntity(string $className, array $properties) {
         $subEntity = new $className();
-
         foreach ($properties as $property => $values) {
-            foreach ($values as $subProperty => $subValue) {
-                $methodName = 'set' . ucfirst($subProperty);
+            $methodName = 'set' . ucfirst($property);
 
-                if (method_exists($subEntity, $methodName)) {
-                    $subEntity->$methodName($subValue);
-                }
+            if (method_exists($subEntity, $methodName)) {
+                $subEntity->$methodName($values);
             }
         }
-
         return $subEntity;
     }
 
