@@ -6,6 +6,7 @@ use App\Repository\ChapterRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Entity(repositoryClass: ChapterRepository::class)]
 class Chapter
@@ -13,24 +14,29 @@ class Chapter
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['chapter.index','tuto.show'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(['chapter.index','tuto.show'])]
     private ?string $title = null;
 
     #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(['chapter.index','tuto.show'])]
     private ?string $description = null;
 
     #[ORM\ManyToOne(inversedBy: 'chapters')]
     private ?Tuto $Tuto = null;
 
     #[ORM\Column]
+    #[Groups(['chapter.index','tuto.show'])]
     private ?int $position = null;
 
     /**
      * @var Collection<int, Content>
      */
     #[ORM\OneToMany(targetEntity: Content::class, mappedBy: 'Chapter',cascade: ['persist', 'remove'], orphanRemoval: true)]
+    #[Groups(['tuto.show'])]
     private Collection $contents;
 
     public function __construct()

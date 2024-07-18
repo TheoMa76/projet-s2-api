@@ -4,15 +4,18 @@ namespace App\Service;
 
 use App\Entity\Chapter;
 use App\Entity\Content;
+use App\Entity\Tuto;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Mapping\Column;
-use Exception;
-use PhpParser\Builder\Class_;
 use ReflectionClass;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
+use Symfony\Component\Serializer\SerializerInterface;
 
 class EntityFetcher
 {
+
     private $entityManager;
     private $entityClass;
 
@@ -26,23 +29,18 @@ class EntityFetcher
         $this->entityClass = $entityClass;
     }
 
-    public function getAll(): array
+    public function getAll(): object|array
     {
         $repository = $this->entityManager->getRepository($this->entityClass);
         $entities = $repository->findAll();
 
-        $data = [];
-        foreach ($entities as $entity) {
-            $data[] = $this->entityToArray($entity);
-        }
-
-        return $data;
+        return $entities;
     }
 
     /**
      * @return object|array
      */
-    public function find($id, $convertToArray = true) 
+    public function find($id) 
     {
         $repository = $this->entityManager->getRepository($this->entityClass);
         $entity = $repository->find($id);
@@ -50,12 +48,7 @@ class EntityFetcher
         if (!$entity) {
             return null;
         }
-
-        if ($convertToArray) {
-            return $this->entityToArray($entity);
-        }else{
             return $entity;
-        }
     }
 
     /**
@@ -66,54 +59,72 @@ class EntityFetcher
         $repository = $this->entityManager->getRepository($this->entityClass);
         $entities = $repository->findBy($criteria);
 
-        $data = [];
-        foreach ($entities as $entity) {
-            if ($convertToArray) {
-                $data[] = $this->entityToArray($entity);
-            }else{
-                $data[] = $entity;
-            }
-        }
-
-        return $data;
+        return $entities;
     }
 
-    public function create(array $data): array
+    public function create(array $data,SerializerInterface $serializer,Request $request): object
     {
-
         $entity = new $this->entityClass();
         $entity = $this->checkRequirement($entity, $data);
-        //dd($entity);
+        $entity = $serializer->deserialize($request->getContent(), $this->entityClass, 'json');
+
         // Persister et retourner l'entité
         $this->entityManager->persist($entity);
         $this->entityManager->flush();
 
-        return $this->entityToArray($entity);
+        return $entity;
     }
 
 
-    public function update($id, array $data){
-        $entity = $this->find($id,false);
+    public function update($id, array $data, SerializerInterface $serializer, Request $request)
+    {
+        $entity = $this->find($id);
 
         if (!$entity) {
             throw new \Exception("Entity not found.");
         }
-        $entity = $this->checkRequirement($entity, $data);
+
+        $data = json_decode($request->getContent(), true);
+
+        // Deserialize Tuto entity without chapters
+        $entity = $serializer->deserialize($request->getContent(), $this->entityClass, 'json', [
+            'object_to_populate' => $entity,
+            'ignored_attributes' => ['chapters']
+        ]);
+
+        //TODO LATER FIND A WAY TO MAKE THIS GENERIC FOR ALL ENTITIES
+        // Handle chapters separately
+        if (isset($data['chapters'])) {
+            $chapters = $data['chapters'];
+            foreach ($chapters as $chapterData) {
+                $chapter = new Chapter();
+                $chapter->setTitle($chapterData['title']);
+                $chapter->setDescription($chapterData['description']);
+                $chapter->setPosition($chapterData['position']);
+                $chapter->setTuto($entity);
+
+                if (isset($chapterData['contents'])) {
+                    foreach ($chapterData['contents'] as $contentData) {
+                        $content = new Content();
+                        $content->setText($contentData['text']);
+                        $content->setCode($contentData['code']);
+                        $content->setPosition($contentData['position']);
+                        $content->setChapter($chapter);
+
+                        $chapter->addContent($content);
+                    }
+                }
+
+                $entity->addChapter($chapter);
+            }
+        }
 
         $this->entityManager->persist($entity);
         $this->entityManager->flush();
 
-        return $this->entityToArray($entity);
+        return $entity;
     }
 
-    public function delete($id){
-        $entity = $this->find($id,false);
-        if (!$entity) {
-            throw new \Exception("Entity not found.");
-        }
-        $this->entityManager->remove($entity);
-        $this->entityManager->flush();
-    }
     
 
     private function checkRequirement($entity,array $data,$addIgnoredProperties = []){
@@ -206,7 +217,7 @@ class EntityFetcher
         }
     }
 
-    private function isTypeValid(\ReflectionType $expectedType, &$value,$keyIfArray = null,$entity = null): bool
+    private function isTypeValid(\ReflectionType $expectedType, &$value): bool
     {
         $typeName = $expectedType->getName();
 
@@ -256,36 +267,6 @@ class EntityFetcher
             case 'Doctrine\Common\Collections\Collection':
                 if (is_array($value)) {
                     $value = new ArrayCollection($value);
-                    $i = 0;
-                
-                    foreach ($value as $objectProperties) {
-                        $className = 'App\\Entity\\' . ucfirst(rtrim($keyIfArray, 's'));
-                
-                        if (!class_exists($className)) {
-                            throw new Exception("Class $className does not exist");
-                        }
-                
-                        $obj = new $className();
-                
-                        foreach ($objectProperties as $property => $setValue) {
-                            $potentialClassName = 'App\\Entity\\' . ucfirst(rtrim($property, 's'));
-                
-                            if (is_array($setValue) && class_exists($potentialClassName)) {
-                                $subEntity = $this->createSubEntity($potentialClassName, $setValue);
-                                $this->addSubEntityToObject($obj, $property, $subEntity);
-                            } else {
-                                $this->setPropertyOnObject($obj, $property, $setValue);
-                            }
-                        }
-                
-                        $this->addEntityToCollection($entity, $keyIfArray, $obj);
-                        $value->remove($i);
-                        $value[$i] = $obj;
-                        $i++;
-                    }
-                
-                    return true;
-                } elseif ($value instanceof ArrayCollection) {
                     return true;
                 }
                 break;
@@ -299,95 +280,20 @@ class EntityFetcher
         return false;
     }
 
-    /**
-     * Create a sub-entity and set its properties.
-     *
-     * @param string $className
-     * @param array $properties
-     * @return object
-     */
-    function createSubEntity(string $className, array $properties) {
-        $subEntity = new $className();
-
-        foreach ($properties as $property => $values) {
-            foreach ($values as $subProperty => $subValue) {
-                $methodName = 'set' . ucfirst($subProperty);
-
-                if (method_exists($subEntity, $methodName)) {
-                    $subEntity->$methodName($subValue);
-                }
-            }
-        }
-
-        return $subEntity;
-    }
-
-    /**
-     * Add a sub-entity to the main object.
-     *
-     * @param object $obj
-     * @param string $property
-     * @param object $subEntity
-     */
-    function addSubEntityToObject(object $obj, string $property, object $subEntity) {
-        $methodName = 'add' . ucfirst(rtrim($property, 's'));
-
-        if (method_exists($obj, $methodName)) {
-            $obj->$methodName($subEntity);
-        }
-    }
-
-    /**
-     * Set a property on the main object.
-     *
-     * @param object $obj
-     * @param string $property
-     * @param mixed $value
-     */
-    function setPropertyOnObject(object $obj, string $property, $value) {
-        $methodName = 'set' . ucfirst($property);
-
-        if (method_exists($obj, $methodName)) {
-            $obj->$methodName($value);
-        }
-    }
-
-    /**
-     * Add the main object to the collection.
-     *
-     * @param object $entity
-     * @param string $keyIfArray
-     * @param object $obj
-     */
-    function addEntityToCollection(object $entity, string $keyIfArray, object $obj) {
-        $methodName = 'add' . ucfirst(rtrim($keyIfArray, 's'));
-
-        if (method_exists($entity, $methodName)) {
-            $entity->$methodName($obj);
-        }
-    }
-    
-    private function entityToArray($entity): array
-    {
-        $reflectionClass = new ReflectionClass($entity);
-        $properties = $reflectionClass->getProperties();
-        $data = [];
-
-        foreach ($properties as $property) {
-            $property->setAccessible(true);
-            $data[$property->getName()] = $property->getValue($entity);
-        }
-
-        return $data;
-    }
-
     private function setData($entity, array $data) {
         $reflectionClass = new \ReflectionClass($entity);
         foreach ($data as $key => $value) {
             if ($reflectionClass->hasProperty($key)) {
                 $property = $reflectionClass->getProperty($key);
                 $property->setAccessible(true);
-                $property->setValue($entity, $value);
+                if(is_array($value)){
+                    $methodName = 'add' . ucfirst($key);
+                    if (method_exists($entity, $methodName)) {
+                        $entity->$methodName($value);
+                    }
+                }else{
+                    $property->setValue($entity, $value);
+                }
             }
         }
     }
