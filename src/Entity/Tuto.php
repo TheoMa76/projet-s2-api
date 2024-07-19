@@ -6,6 +6,7 @@ use App\Repository\TutoRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Entity(repositoryClass: TutoRepository::class)]
 class Tuto
@@ -13,27 +14,34 @@ class Tuto
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['tuto.index'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(['tuto.index'])]
     private ?string $title = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(['tuto.index'])]
     private ?string $estimated_time = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(['tuto.index'])]
     private ?string $difficulty = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(['tuto.index'])]
     private ?string $game = null;
 
     /**
      * @var Collection<int, Chapter>
      */
     #[ORM\OneToMany(targetEntity: Chapter::class, mappedBy: 'Tuto', cascade: ['persist', 'remove'], orphanRemoval: true)]
+    #[Groups(['tuto.show'])]
     private Collection $chapters;
 
     #[ORM\Column]
+    #[Groups(['tuto.index'])]
     private ?int $position = null;
 
     public function __construct()

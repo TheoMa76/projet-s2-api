@@ -4,6 +4,7 @@ namespace App\Entity;
 
 use App\Repository\ContentRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Entity(repositoryClass: ContentRepository::class)]
 class Content
@@ -11,21 +12,27 @@ class Content
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['content.index','tuto.show'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 1000, nullable: true)]
+    #[Groups(['content.index','tuto.show'])]
     private ?string $text = null;
 
     #[ORM\Column(length: 1000, nullable: true)]
+    #[Groups(['content.index','tuto.show'])]
     private ?string $code = null;
 
     #[ORM\Column]
+    #[Groups(['content.index','tuto.show'])]
     private ?int $position = null;
 
     #[ORM\Column(length: 1000, nullable: true)]
+    #[Groups(['content.index','tuto.show'])]
     private ?string $image = null;
 
     #[ORM\Column(length: 1000, nullable: true)]
+    #[Groups(['content.index','tuto.show'])]
     private ?string $video = null;
 
     #[ORM\ManyToOne(inversedBy: 'contents')]
