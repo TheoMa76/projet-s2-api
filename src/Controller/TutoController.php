@@ -6,6 +6,8 @@ use App\Entity\Tuto;
 use App\Service\EntityFetcher;
 use Symfony\Component\Routing\Annotation\Route;
 
+//TODO RAJOUTER UNE IMAGE DE PRESENTATION ET UNE DESCRIPTION
+
 #[Route("/tuto")]
 class TutoController extends BaseController
 {
