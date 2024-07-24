@@ -6,9 +6,7 @@ use App\Entity\Chapter;
 use App\Service\EntityFetcher;
 use Symfony\Component\Routing\Annotation\Route;
 
-/**
- * @Route("/chapter")
- */
+#[Route("/chapter")]
 class ChapterController extends BaseController
 {
     protected $entityClass = Chapter::class;

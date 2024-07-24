@@ -43,10 +43,13 @@ class EntityFetcher
     public function find($id) 
     {
         $repository = $this->entityManager->getRepository($this->entityClass);
-        $entity = $repository->find($id);
+        $entity = $repository->findCustom($id);
 
         if (!$entity) {
-            return null;
+            $entity = $repository->find($id);
+            if(!$entity){
+                return null;
+            }
         }
             return $entity;
     }
@@ -67,6 +70,7 @@ class EntityFetcher
         $entity = new $this->entityClass();
         $entity = $this->checkRequirement($entity, $data);
         $entity = $serializer->deserialize($request->getContent(), $this->entityClass, 'json');
+    
 
         // Persister et retourner l'entité
         $this->entityManager->persist($entity);

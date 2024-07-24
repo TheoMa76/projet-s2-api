@@ -16,6 +16,19 @@ class TutoRepository extends ServiceEntityRepository
         parent::__construct($registry, Tuto::class);
     }
 
+    public function findCustom($id): ?Tuto {
+        return $this->createQueryBuilder('t')
+            ->leftJoin('t.chapters', 'c')
+            ->leftJoin('c.contents', 'con')
+            ->addSelect('c')
+            ->addSelect('con')
+            ->andWhere('t.id = :id')
+            ->setParameter('id', $id)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
+    
+
     //    /**
     //     * @return Tuto[] Returns an array of Tuto objects
     //     */
