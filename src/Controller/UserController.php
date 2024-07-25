@@ -48,6 +48,8 @@ class UserController extends BaseController
                 'roles' => $user->getRoles(),
                 'createdAt' => $user->getCreatedAt(),
                 'updatedAt' => $user->getUpdatedAt(),
+                'id' => $user->getId(),
+                'username' => $user->getUsername(),
             ]);
         } catch (\RuntimeException $e) {
             return new JsonResponse(['error' => 'Invalid Token'], 401);
