@@ -16,6 +16,17 @@ class TutoRepository extends ServiceEntityRepository
         parent::__construct($registry, Tuto::class);
     }
 
+    public function findAllWithChaptersAndContent()
+    {
+        return $this->createQueryBuilder('t')
+            ->leftJoin('t.chapters', 'c')
+            ->leftJoin('c.contents', 'cnt')
+            ->addSelect('c')
+            ->addSelect('cnt')
+            ->getQuery()
+            ->getResult();
+    }
+
     public function findCustom($id): ?Tuto {
         return $this->createQueryBuilder('t')
             ->leftJoin('t.chapters', 'c')
