@@ -14,29 +14,29 @@ class Chapter
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(['chapter.index','tuto.show','progress.index'])]
+    #[Groups(['chapter.index','tuto.show','progress.index','tutorial:admin'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(['chapter.index','tuto.show','progress.index'])]
+    #[Groups(['chapter.index','tuto.show','progress.index','tutorial:admin'])]
     private ?string $title = null;
 
     #[ORM\Column(length: 255, nullable: true)]
-    #[Groups(['chapter.index','tuto.show'])]
+    #[Groups(['chapter.index','tuto.show','tutorial:admin'])]
     private ?string $description = null;
 
     #[ORM\ManyToOne(inversedBy: 'chapters')]
     private ?Tuto $Tuto = null;
 
     #[ORM\Column]
-    #[Groups(['chapter.index','tuto.show'])]
+    #[Groups(['chapter.index','tuto.show','tutorial:admin'])]
     private ?int $position = null;
 
     /**
      * @var Collection<int, Content>
      */
     #[ORM\OneToMany(targetEntity: Content::class, mappedBy: 'Chapter',cascade: ['persist', 'remove'], orphanRemoval: true)]
-    #[Groups(['tuto.show'])]
+    #[Groups(['tuto.show','tutorial:admin'])]
     private Collection $contents;
 
     /**

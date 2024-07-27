@@ -14,34 +14,34 @@ class Tuto
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(['tuto.index'])]
+    #[Groups(['tuto.index','tutorial:admin'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(['tuto.index'])]
+    #[Groups(['tuto.index','tutorial:admin'])]
     private ?string $title = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(['tuto.index'])]
+    #[Groups(['tuto.index','tutorial:admin'])]
     private ?string $estimated_time = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(['tuto.index'])]
+    #[Groups(['tuto.index','tutorial:admin'])]
     private ?string $difficulty = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(['tuto.index'])]
+    #[Groups(['tuto.index','tutorial:admin'])]
     private ?string $game = null;
 
     /**
      * @var Collection<int, Chapter>
      */
     #[ORM\OneToMany(targetEntity: Chapter::class, mappedBy: 'Tuto', cascade: ['persist', 'remove'], orphanRemoval: true)]
-    #[Groups(['tuto.show'])]
+    #[Groups(['tuto.show','tutorial:admin'])]
     private Collection $chapters;
 
     #[ORM\Column]
-    #[Groups(['tuto.index'])]
+    #[Groups(['tuto.index','tutorial:admin'])]
     private ?int $position = null;
 
     public function __construct()

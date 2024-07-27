@@ -18,12 +18,12 @@ class AdminController extends AbstractController
         $this->tutorialRepository = $tutorialRepository;
     }
 
-    #[Route('/admin', name: 'app_admin')]
+    #[Route('/admin/tuto', name: 'app_admin')]
     #[IsGranted('ROLE_ADMIN')]
     public function index(): JsonResponse
     {
         $tutorials = $this->tutorialRepository->findAllWithChaptersAndContent();
-
+    
         return $this->json($tutorials, 200, [], ['groups' => 'tutorial:admin']);
     }
 }
