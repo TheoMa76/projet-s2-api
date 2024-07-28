@@ -18,18 +18,18 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(['user.index','progress.index'])]
+    #[Groups(['user.index','progress.index','user:admin'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 180, unique: true)]
-    #[Groups(['user.index','progress.index'])]
+    #[Groups(['user.index','progress.index','user:admin'])]
     private ?string $email = null;
 
     /**
      * @var list<string> The user roles
      */
     #[ORM\Column]
-    #[Groups(['user.index'])]
+    #[Groups(['user.index','user:admin'])]
     private array $roles = [];
 
     /**
@@ -39,15 +39,15 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private ?string $password = null;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
-    #[Groups(['user.show'])]
+    #[Groups(['user.show','user:admin'])]
     private ?\DateTimeInterface $created_at = null;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
-    #[Groups(['user.show'])]
+    #[Groups(['user.show','user:admin'])]
     private ?\DateTimeInterface $updated_at = null;
 
     #[ORM\Column(length: 255, unique:true)]
-    #[Groups(['user.index','progress.index'])]
+    #[Groups(['user.index','progress.index','user:admin'])]
     private ?string $username = null;
 
     /**

@@ -13,7 +13,7 @@ class Progress
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(['progress.index'])]
+    #[Groups(['progress.index','user:admin'])]
     private ?int $id = null;
 
     #[ORM\ManyToOne(inversedBy: 'progress')]
@@ -21,15 +21,15 @@ class Progress
     private ?User $user = null;
 
     #[ORM\ManyToOne(inversedBy: 'progress')]
-    #[Groups(['progress.index'])]
+    #[Groups(['progress.index','user:admin'])]
     private ?Chapter $chapter = null;
 
     #[ORM\Column]
-    #[Groups(['progress.index'])]
+    #[Groups(['progress.index','user:admin'])]
     private ?bool $isCompleted = null;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
-    #[Groups(['progress.index'])]
+    #[Groups(['progress.index','user:admin'])]
     private ?\DateTimeInterface $completedAt = null;
 
     public function getId(): ?int

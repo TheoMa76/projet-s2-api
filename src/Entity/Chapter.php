@@ -14,15 +14,15 @@ class Chapter
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(['chapter.index','tuto.show','progress.index','tutorial:admin'])]
+    #[Groups(['chapter.index','tuto.show','progress.index','tutorial:admin','user:admin'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(['chapter.index','tuto.show','progress.index','tutorial:admin'])]
+    #[Groups(['chapter.index','tuto.show','progress.index','tutorial:admin','user:admin'])]
     private ?string $title = null;
 
     #[ORM\Column(length: 255, nullable: true)]
-    #[Groups(['chapter.index','tuto.show','tutorial:admin'])]
+    #[Groups(['chapter.index','tuto.show','tutorial:admin','user:admin'])]
     private ?string $description = null;
 
     #[ORM\ManyToOne(inversedBy: 'chapters')]
