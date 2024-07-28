@@ -40,6 +40,22 @@ class AdminController extends AbstractController
         return $this->json($tutorial, 200, [], ['groups' => 'tutorial:admin']);
     }
 
+    #[Route('/admin/tuto/{id}/update', name: 'app_admin_update', methods: ['PUT'])]
+    #[IsGranted('ROLE_ADMIN')]
+    public function update($id, EntityManagerInterface $entityManager, Request $request): JsonResponse
+    {
+        $tutorial = $this->tutorialRepository->find($id);
+        if (!$tutorial) {
+            return $this->json(['error' => 'Tutorial not found'], 404);
+        }
+        $data = json_decode($request->getContent(), true);
+        $tutorial->setTitle($data['title']);
+        $tutorial->setDescription($data['description']);
+        $entityManager->persist($tutorial);
+        $entityManager->flush();
+        return $this->json($tutorial, 200, [], ['groups' => 'tutorial:admin']);
+    }
+
     #[Route('/admin/tuto/{id}', name: 'app_admin_delete', methods: ['DELETE'])]
     #[IsGranted('ROLE_ADMIN')]
     public function delete($id, EntityManagerInterface $entityManager): JsonResponse
