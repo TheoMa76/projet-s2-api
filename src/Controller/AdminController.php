@@ -69,7 +69,7 @@ class AdminController extends AbstractController
         return $this->json($user, 200, [], ['groups' => 'user:admin']);
     }
 
-    #[Route('/admin/user/{id}', name: 'app_admin_user_delete', methods: ['DELETE'])]
+    #[Route('/admin/user/{id}/delete', name: 'app_admin_user_delete', methods: ['DELETE'])]
     #[IsGranted('ROLE_ADMIN')]
     public function userDelete($id, EntityManagerInterface $entityManager): JsonResponse
     {
