@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\Tuto;
+use App\Entity\User;
 use App\Repository\TutoRepository;
 use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
@@ -95,7 +96,7 @@ class AdminController extends AbstractController
         }
         $entityManager->remove($user);
         $entityManager->flush();
-        return $this->json(null, 204);
+        return new JsonResponse("Utilisateur supprimé", 204);
     }
 
     #[Route('/admin/user/{id}/update', name: 'app_admin_user_update', methods: ['PUT'])]
@@ -112,5 +113,23 @@ class AdminController extends AbstractController
         $entityManager->persist($user);
         $entityManager->flush();
         return $this->json($user, 200, [], ['groups' => 'user:admin']);
+    }
+
+    #[Route('/admin/create/user', name: 'app_admin_user_create', methods: ['POST'])]
+    #[IsGranted('ROLE_ADMIN')]
+    public function userCreate(EntityManagerInterface $entityManager, Request $request): JsonResponse
+    {
+        $data = json_decode($request->getContent(), true);
+        $user = $this->userRepository->findOneBy(['email' => $data['email']]);
+        if ($user) {
+            return $this->json(['error' => 'User already exists'], 400);
+        }
+        $user = new User();
+        $user->setEmail($data['email']);
+        $user->setUsername($data['username']);
+        dd($user);
+        $entityManager->persist($user);
+        $entityManager->flush();
+        return $this->json($user, 201, [], ['groups' => 'user:admin']);
     }
 }
