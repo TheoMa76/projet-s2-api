@@ -37,6 +37,7 @@ security:
         - { path: ^/api,       roles: IS_AUTHENTICATED_FULLY }
         - { path: ^/admin,     roles: ROLE_ADMIN }
         - { path: ^/,          roles: PUBLIC_ACCESS }
+        - { path: ^/user/reset,roles: PUBLIC_ACCESS }
 
 when@test:
     security:
