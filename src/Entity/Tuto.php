@@ -18,30 +18,30 @@ class Tuto
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(['tuto.index','tutorial:admin'])]
+    #[Groups(['tuto.index','tutorial:admin','tuto.preview'])]
     private ?string $title = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(['tuto.index','tutorial:admin'])]
+    #[Groups(['tuto.index','tutorial:admin','tuto.preview'])]
     private ?string $estimated_time = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(['tuto.index','tutorial:admin'])]
+    #[Groups(['tuto.index','tutorial:admin','tuto.preview'])]
     private ?string $difficulty = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(['tuto.index','tutorial:admin'])]
+    #[Groups(['tuto.index','tutorial:admin','tuto.preview'])]
     private ?string $game = null;
 
     /**
      * @var Collection<int, Chapter>
      */
     #[ORM\OneToMany(targetEntity: Chapter::class, mappedBy: 'Tuto', cascade: ['persist', 'remove'], orphanRemoval: true)]
-    #[Groups(['tuto.show','tutorial:admin'])]
+    #[Groups(['tuto.show','tutorial:admin','tuto.preview'])]
     private Collection $chapters;
 
     #[ORM\Column]
-    #[Groups(['tuto.index','tutorial:admin'])]
+    #[Groups(['tuto.index','tutorial:admin','tuto.preview'])]
     private ?int $position = null;
 
     public function __construct()

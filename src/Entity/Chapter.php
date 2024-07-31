@@ -18,18 +18,18 @@ class Chapter
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(['chapter.index','tuto.show','progress.index','tutorial:admin','user:admin'])]
+    #[Groups(['chapter.index','tuto.show','progress.index','tutorial:admin','user:admin','tuto.preview'])]
     private ?string $title = null;
 
     #[ORM\Column(length: 255, nullable: true)]
-    #[Groups(['chapter.index','tuto.show','tutorial:admin','user:admin'])]
+    #[Groups(['chapter.index','tuto.show','tutorial:admin','user:admin','tuto.preview'])]
     private ?string $description = null;
 
     #[ORM\ManyToOne(inversedBy: 'chapters')]
     private ?Tuto $Tuto = null;
 
     #[ORM\Column]
-    #[Groups(['chapter.index','tuto.show','tutorial:admin'])]
+    #[Groups(['chapter.index','tuto.show','tutorial:admin','tuto.preview'])]
     private ?int $position = null;
 
     /**

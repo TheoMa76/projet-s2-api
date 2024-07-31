@@ -38,6 +38,7 @@ security:
         - { path: ^/admin,     roles: ROLE_ADMIN }
         - { path: ^/,          roles: PUBLIC_ACCESS }
         - { path: ^/user/reset,roles: PUBLIC_ACCESS }
+        - { path: /preview, roles: PUBLIC_ACCESS }
 
 when@test:
     security:

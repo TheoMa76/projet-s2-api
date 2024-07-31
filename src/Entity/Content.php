@@ -15,11 +15,11 @@ class Content
     #[Groups(['content.index','tuto.show','tutorial:admin'])]
     private ?int $id = null;
 
-    #[ORM\Column(length: 1000, nullable: true)]
+    #[ORM\Column(length: 6000, nullable: true)]
     #[Groups(['content.index','tuto.show','tutorial:admin'])]
     private ?string $text = null;
 
-    #[ORM\Column(length: 1000, nullable: true)]
+    #[ORM\Column(length: 6000, nullable: true)]
     #[Groups(['content.index','tuto.show','tutorial:admin'])]
     private ?string $code = null;
 
