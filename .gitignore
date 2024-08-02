@@ -23,3 +23,5 @@
 .phpunit.result.cache
 ###< phpunit/phpunit ###
 .env.test
+###< images ###
+/public/images/

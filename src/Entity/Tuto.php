@@ -47,25 +47,16 @@ class Tuto
     #[Groups(['tuto.index', 'tutorial:admin', 'tuto.preview'])]
     private ?int $position = null;
 
-    /**
-     * NOTE: This is not a mapped field of entity metadata, just a simple property.
-     *
-     * @Vich\UploadableField(mapping="tuto_image", fileNameProperty="image")
-     *
-     * @var File|null
-     */
+    #[Vich\UploadableField(mapping:"tuto_image", fileNameProperty:"image")]
     private ?File $imageFile = null;
 
-    /**
-     * @ORM\Column(type="string", length=255, nullable=true)
-     * @Groups(['tuto.index', 'tutorial:admin', 'tuto.preview'])
-     */
+     #[ORM\Column(type:"string", length:255, nullable:true)]
+     #[Groups(['tuto.index', 'tutorial:admin', 'tuto.preview','tuto.show'])]
     private ?string $image = null;
 
-    /**
-     * @ORM\Column(type="datetime", nullable=true)
-     */
-    private ?\DateTimeImmutable $updatedAt = null;
+    #[ORM\Column(nullable:true)]
+    #[Groups(['tuto.index', 'tutorial:admin', 'tuto.preview'])]
+    private ?\DateTime $updatedAt = null;
 
     public function __construct()
     {
@@ -172,13 +163,19 @@ class Tuto
         $this->imageFile = $imageFile;
 
         if (null !== $imageFile) {
-            $this->updatedAt = new \DateTimeImmutable();
+            $this->updatedAt = new \DateTime();
         }
     }
 
     public function getImageFile(): ?File
     {
         return $this->imageFile;
+    }
+
+    #[Groups(['tuto.index', 'tutorial:admin', 'tuto.preview','tuto.show'])]
+    public function getImageUrl(): ?string
+    {
+        return $this->image ? '/images/tuto/' . $this->image : null;
     }
 
     public function setImage(?string $image): static
@@ -193,14 +190,14 @@ class Tuto
         return $this->image;
     }
 
-    public function setUpdatedAt(?\DateTimeImmutable $updatedAt): static
+    public function setUpdatedAt(?\DateTime $updatedAt): static
     {
         $this->updatedAt = $updatedAt;
 
         return $this;
     }
 
-    public function getUpdatedAt(): ?\DateTimeImmutable
+    public function getUpdatedAt(): ?\DateTime
     {
         return $this->updatedAt;
     }
