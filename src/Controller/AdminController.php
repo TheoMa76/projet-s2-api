@@ -6,22 +6,30 @@ use App\Entity\Tuto;
 use App\Entity\User;
 use App\Repository\TutoRepository;
 use App\Repository\UserRepository;
+use App\Service\EntityFetcher;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
+use Symfony\Component\Serializer\SerializerInterface;
 
 class AdminController extends AbstractController
 {
     private $tutorialRepository;
     private $userRepository;
+    private $entityFetcher;
+    private $serializer;
+    private $entityManager;
 
-    public function __construct(TutoRepository $tutorialRepository, UserRepository $userRepository)
+    public function __construct(EntityManagerInterface $entityManager,TutoRepository $tutorialRepository, UserRepository $userRepository, SerializerInterface $serializer, EntityFetcher $entityFetcher)
     {
         $this->tutorialRepository = $tutorialRepository;
         $this->userRepository = $userRepository;
+        $this->serializer = $serializer;
+        $this->entityFetcher = $entityFetcher;
+        $this->entityManager = $entityManager;
     }
 
     #[Route('/admin/tuto', name: 'app_admin')]
@@ -55,6 +63,32 @@ class AdminController extends AbstractController
         $entityManager->persist($tutorial);
         $entityManager->flush();
         return $this->json($tutorial, 200, [], ['groups' => 'tutorial:admin']);
+    }
+
+    #[Route('/admin/parpitier', methods: ['POST'])]
+    #[IsGranted('ROLE_ADMIN')]
+    public function create(EntityManagerInterface $entityManager, Request $request): JsonResponse
+    {
+      $this->entityFetcher->setEntityClass(Tuto::class);
+        $data = $this->entityFetcher->create(json_decode($request->getContent(), true), $this->serializer, $request);
+        return $this->json($data, 201, [], ['groups' => 'tutorial:admin']);
+    }
+
+    #[Route('admin/upload-image/{id}', name:"upload_tuto_image", methods:["POST"])]
+    #[IsGranted("PUBLIC_ACCESS")]
+    public function uploadImage(Request $request, $id): JsonResponse
+    {
+        $tuto = $this->entityManager->find(Tuto::class,$id);
+        $file = $request->files->get('image');
+        if ($file) {
+            $tuto->setImageFile($file);
+            $this->entityManager->persist($tuto);
+            $this->entityManager->flush();
+
+            return $this->json(['message' => 'Image uploaded successfully.']);
+        }
+
+        return $this->json(['message' => 'No image uploaded.']);
     }
 
     #[Route('/admin/tuto/{id}', name: 'app_admin_delete', methods: ['DELETE'])]
@@ -127,7 +161,6 @@ class AdminController extends AbstractController
         $user = new User();
         $user->setEmail($data['email']);
         $user->setUsername($data['username']);
-        dd($user);
         $entityManager->persist($user);
         $entityManager->flush();
         return $this->json($user, 201, [], ['groups' => 'user:admin']);

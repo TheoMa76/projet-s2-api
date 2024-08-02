@@ -24,22 +24,6 @@ class TutoController extends BaseController
         parent::__construct($entityFetcher, $this->entityClass);
         $this->entityManager = $entityManager;
     }
-    #[Route('/upload-image/{id}', name:"upload_tuto_image", methods:["POST"])]
-    #[IsGranted("PUBLIC_ACCESS")]
-    public function uploadImage(Request $request, $id): Response
-    {
-        $tuto = $this->entityManager->find(Tuto::class,$id);
-        $file = $request->files->get('image');
-        if ($file) {
-            $tuto->setImageFile($file);
-            $this->entityManager->persist($tuto);
-            $this->entityManager->flush();
-
-            return $this->json(['message' => 'Image uploaded successfully.'], Response::HTTP_OK);
-        }
-
-        return $this->json(['message' => 'No image uploaded.'], Response::HTTP_BAD_REQUEST);
-    }
 
     #[Route('/preview/find/{id}', methods: ['GET'])]
     #[IsGranted("PUBLIC_ACCESS")]

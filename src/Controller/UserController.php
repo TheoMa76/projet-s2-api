@@ -73,6 +73,42 @@ class UserController extends BaseController
         }
     }
 
+    #[Route('/delete', methods: ['POST'])]
+    public function deinscription(Request $request): JsonResponse
+    {
+        $authHeader = $request->headers->get('Authorization');
+        if (!$authHeader || !preg_match('/Bearer\s(\S+)/', $authHeader, $matches)) {
+            return new JsonResponse(['error' => 'Token not provided'], 401);
+        }
+
+        $token = $matches[1];
+
+        try {
+            $data = $this->jwtDecoder->decode($token);
+            $email = $data['username'];
+            $user = $this->userRepository->findWithProgress($email);
+            
+            $progressList = $user->getProgress();
+            foreach($progressList as $progress){
+                $this->entityManager->remove($progress);
+            }
+
+            if (!$user) {
+                return new JsonResponse(['error' => 'User not found'], 404);
+            }
+            
+
+            $this->entityManager->remove($user);
+            $this->entityManager->flush();
+
+            return new JsonResponse([
+                'message' => 'User deleted',
+            ]);
+        } catch (\RuntimeException $e) {
+            return new JsonResponse(['error' => 'Invalid Token'], 401);
+        }
+    }
+
     #[Route('/reset', methods: ['POST'])]
     #[IsGranted('PUBLIC_ACCESS')]
     public function resetPassword(Request $request): JsonResponse
@@ -159,7 +195,7 @@ class UserController extends BaseController
 
         foreach($tutorials as $tutorial) {
             $tutorialId = $tutorial->getId();
-            $tutorialTitles[$tutorialId] = $tutorial->getTitle(); // Ajouter le titre du tutoriel
+            $tutorialTitles[$tutorialId] = $tutorial->getTitle();
             $idChapters = [];
             $nbChapters = 0;
 
@@ -167,7 +203,7 @@ class UserController extends BaseController
                 $chapterId = $chapter->getId();
                 $idChapters[] = $chapterId;
                 $nbChapters++;
-                $chapterTitles[$chapterId] = $chapter->getTitle(); // Ajouter le titre du chapitre
+                $chapterTitles[$chapterId] = $chapter->getTitle();
             }
 
             $idChaptersList[$tutorialId] = $idChapters;

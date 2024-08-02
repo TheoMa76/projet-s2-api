@@ -131,7 +131,7 @@ class EntityFetcher
 
     
 
-    private function checkRequirement($entity,array $data,$addIgnoredProperties = []){
+    private function checkRequirement($entity,array $data,$addIgnoredProperties = ['imageFile']){
         $data = $this->checkPropertyTypes($entity, $data);
         if (!empty($typeErrors)) {
             trigger_error('Type mismatch: ' . implode(', ', $typeErrors), E_USER_ERROR);
