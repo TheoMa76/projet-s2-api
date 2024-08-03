@@ -91,13 +91,21 @@ class AdminController extends AbstractController
         return $this->json(['message' => 'No image uploaded.']);
     }
 
-    #[Route('/admin/tuto/{id}', name: 'app_admin_delete', methods: ['DELETE'])]
+    #[Route('/admin/tuto/delete/{id}', name: 'app_admin_delete', methods: ['DELETE'])]
     #[IsGranted('ROLE_ADMIN')]
     public function delete($id, EntityManagerInterface $entityManager): JsonResponse
     {
-        $tutorial = $this->tutorialRepository->find($id);
+        $tutorial = $this->tutorialRepository->findCustom($id);
         if (!$tutorial) {
             return $this->json(['error' => 'Tutorial not found'], 404);
+        }
+        $chapters = $tutorial->getChapters();
+        foreach ($chapters as $chapter) {
+            $contents = $chapter->getContents();
+            foreach ($contents as $content) {
+                $entityManager->remove($content);
+            }
+            $entityManager->remove($chapter);
         }
         $entityManager->remove($tutorial);
         $entityManager->flush();

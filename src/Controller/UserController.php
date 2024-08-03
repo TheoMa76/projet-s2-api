@@ -57,7 +57,10 @@ class UserController extends BaseController
             $user = $this->userRepository->findOneBy(['email' => $email]);
 
             if (!$user) {
+               $user = $this->userRepository->findOneBy(['username' => $email]);
+               if(!$user){
                 return new JsonResponse(['error' => 'User not found'], 404);
+               }
             }
 
             return new JsonResponse([
@@ -168,6 +171,47 @@ class UserController extends BaseController
         return new JsonResponse(['message' => 'Mot de passe modifié']);
     }
 
+    #[Route('/edit/{id}', methods: ['PUT'])]
+    public function edit(Request $request,$id): JsonResponse{
+        $authHeader = $request->headers->get('Authorization');
+        if (!$authHeader || !preg_match('/Bearer\s(\S+)/', $authHeader, $matches)) {
+            return new JsonResponse(['error' => 'Token not provided'], 401);
+        }
+        $body = json_decode($request->getContent(), true);
+
+        try {
+            $email = $body['oldEmail'];
+            $user = $this->userRepository->findOneBy(['email' => $email]);
+            if($id != $user->getId()){
+                return new JsonResponse(['error' => 'User not found'], 404);
+            }
+            if (!$user) {
+                return new JsonResponse(['error' => 'User not found'], 404);
+            }
+            if($body['email']){
+                $user->setEmail($body['email']);
+            }
+            if($body['username']){
+                $user->setUsername($body['username']);
+            }
+            if(isset($body['password']) && isset($body['confirmPassword']) && isset($body['currentPassword']) && $body['password'] === $body['confirmPassword']){
+                if(!password_verify($body['currentPassword'], $user->getPassword())){
+                    return new JsonResponse(['error' => 'Current password is incorrect'], 400);
+                }else{
+                    $password = password_hash($body['password'], PASSWORD_DEFAULT);
+                    $user->setPassword($password);
+                }
+            }else if(isset($body['password']) && !isset($body['confirmPassword']) || isset($body['confirmPassword']) && !isset($body['password'])){
+                return new JsonResponse(['error' => 'Both password and confirm password are required'], 400);
+            }
+            $this->entityManager->persist($user);
+            $this->entityManager->flush();
+        } catch (\RuntimeException $e) {
+            return new JsonResponse(['error' => 'Invalid Token'], 401);
+        }
+        return new JsonResponse(['message' => 'User updated']);
+    }
+
     #[Route('/progress', methods: ['GET'])]
     public function getProgress(Request $request): JsonResponse
 {
@@ -215,11 +259,11 @@ class UserController extends BaseController
         $jsonProgress = json_decode($jsonProgress->getContent());
 
         return new JsonResponse([
-            'progress' => $jsonProgress,
+            'progress' => $jsonProgress ?? "No progress",
             'nbChapters' => $nbChaptersList,
             'idChapters' => $idChaptersList,
-            'tutorialTitles' => $tutorialTitles, // Ajouter les titres des tutoriels
-            'chapterTitles' => $chapterTitles   // Ajouter les titres des chapitres
+            'tutorialTitles' => $tutorialTitles,
+            'chapterTitles' => $chapterTitles  
         ]);
     } catch (\RuntimeException $e) {
         return new JsonResponse(['error' => 'Invalid Token'], 401);
@@ -236,7 +280,6 @@ class UserController extends BaseController
             'expires_at' => $expiresAt,
         ]);
     
-        // Vous pouvez aussi encoder en Base64 pour rendre le token plus compact
         return base64_encode($tokenData);
     }
 

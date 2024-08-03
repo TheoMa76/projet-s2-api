@@ -33,13 +33,13 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
         $this->getEntityManager()->flush();
     }
 
-    public function findWithProgress(string $email)
+    public function findWithProgress(string $username)
     {
         $qb = $this->createQueryBuilder('u')
             ->leftJoin('u.progress', 'p')
             ->addSelect('p')
-            ->where('u.email = :email')
-            ->setParameter('email', $email);
+            ->where('u.username = :username')
+            ->setParameter('username', $username);
 
         return $qb->getQuery()->getOneOrNullResult();
     }

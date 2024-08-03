@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\Progress;
 use App\Repository\ChapterRepository;
+use App\Repository\ProgressRepository;
 use App\Repository\UserRepository;
 use App\Service\EntityFetcher;
 use App\Service\JWTDecoderService;
@@ -21,35 +22,51 @@ class ProgressController extends BaseController
     private $userRepository;
     private $chapterRepository;
     private $jwtDecoder;
+    private $progressRepository;
 
 
 
-    public function __construct(JWTDecoderService $jwtDecoder,EntityFetcher $entityFetcher,EntityManagerInterface $entityManager, UserRepository $userRepository, ChapterRepository $chapterRepository)
+    public function __construct(JWTDecoderService $jwtDecoder,EntityFetcher $entityFetcher,EntityManagerInterface $entityManager, UserRepository $userRepository, ChapterRepository $chapterRepository, ProgressRepository $progressRepository)
     {
         parent::__construct($entityFetcher, $this->entityClass);
         $this->userRepository = $userRepository;
         $this->chapterRepository = $chapterRepository;
         $this->entityManager = $entityManager;
         $this->jwtDecoder = $jwtDecoder;
+        $this->progressRepository = $progressRepository;
     }
 
-    #[Route("/progression/create", methods: ["POST"])]
-    public function createProgress(Request $request, SerializerInterface $serializer): JsonResponse
-    {
+    #[Route("/progression/insert", methods: ["POST"])]
+public function createProgress(Request $request, SerializerInterface $serializer): JsonResponse
+{
+    $authHeader = $request->headers->get('Authorization');
+    if (!$authHeader || !preg_match('/Bearer\s(\S+)/', $authHeader, $matches)) {
+        return new JsonResponse(['error' => 'Token not provided'], 401);
+    }
 
-        $authHeader = $request->headers->get('Authorization');
-        if (!$authHeader || !preg_match('/Bearer\s(\S+)/', $authHeader, $matches)) {
-            return new JsonResponse(['error' => 'Token not provided'], 401);
-        }
+    $token = $matches[1];
 
-        $token = $matches[1];
+    $data = json_decode($request->getContent(), true);
+    $token = $this->jwtDecoder->decode($token);
+    $email = $token['username'];
+    $user = $this->userRepository->findWithProgress($email);
 
-        $data = json_decode($request->getContent(), true);
-        $token = $this->jwtDecoder->decode($token);
-            $email = $token['username'];
-            $user = $this->userRepository->findWithProgress($email);
+    if (!$user) {
+        return new JsonResponse(['error' => 'User not found'], 404);
+    }
 
-        $chapter = $this->chapterRepository->find(['id' => $data['chapter']]);
+    $chapter = $this->chapterRepository->find($data['chapter']);
+    if (!$chapter) {
+        return new JsonResponse(['error' => 'Chapter not found'], 404);
+    }
+
+    // Vérifier si le progress existe déjà
+    $existingProgress = $this->progressRepository->findOneBy([
+        'user' => $user,
+        'chapter' => $chapter,
+    ]);
+
+    if (!$existingProgress) {
         $entity = $serializer->deserialize($request->getContent(), Progress::class, 'json');
         $entity->setUser($user);
         $entity->setChapter($chapter);
@@ -58,8 +75,12 @@ class ProgressController extends BaseController
 
         $this->entityManager->persist($entity);
         $this->entityManager->flush();
-
         return $this->json($data, 200, [], ['groups' => 'progress.index']);
+
+    }else{
+        return new JsonResponse(['message' => 'Progress already exists'], 200);
     }
+
+}
 
 }
