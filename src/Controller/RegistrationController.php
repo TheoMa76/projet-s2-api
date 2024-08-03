@@ -9,11 +9,13 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Doctrine\Persistence\ManagerRegistry;
 use App\Entity\User;
-  
+use Symfony\Component\Security\Http\Attribute\IsGranted;
+
 #[Route('/api', name: 'api_')]
 class RegistrationController extends AbstractController
 {
     #[Route('/register', name: 'register', methods: 'post')]
+    #[IsGranted('PUBLIC_ACCESS')]
     public function index(ManagerRegistry $doctrine, Request $request, UserPasswordHasherInterface $passwordHasher): JsonResponse
     {
        
