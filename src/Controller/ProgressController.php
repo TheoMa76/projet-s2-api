@@ -66,7 +66,6 @@ public function createProgress(Request $request, SerializerInterface $serializer
         'chapter' => $chapter,
     ]);
 
-    if (!$existingProgress) {
         $entity = $serializer->deserialize($request->getContent(), Progress::class, 'json');
         $entity->setUser($user);
         $entity->setChapter($chapter);
@@ -76,10 +75,6 @@ public function createProgress(Request $request, SerializerInterface $serializer
         $this->entityManager->persist($entity);
         $this->entityManager->flush();
         return $this->json($data, 200, [], ['groups' => 'progress.index']);
-
-    }else{
-        return new JsonResponse(['message' => 'Progress already exists'], 200);
-    }
 
 }
 
