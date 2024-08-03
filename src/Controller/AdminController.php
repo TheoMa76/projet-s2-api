@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\Tuto;
 use App\Entity\User;
+use App\Repository\ContentRepository;
 use App\Repository\TutoRepository;
 use App\Repository\UserRepository;
 use App\Service\EntityFetcher;
@@ -22,14 +23,16 @@ class AdminController extends AbstractController
     private $entityFetcher;
     private $serializer;
     private $entityManager;
+    private $contentRepository;
 
-    public function __construct(EntityManagerInterface $entityManager,TutoRepository $tutorialRepository, UserRepository $userRepository, SerializerInterface $serializer, EntityFetcher $entityFetcher)
+    public function __construct(EntityManagerInterface $entityManager,TutoRepository $tutorialRepository, UserRepository $userRepository, SerializerInterface $serializer, EntityFetcher $entityFetcher,ContentRepository $contentRepository)
     {
         $this->tutorialRepository = $tutorialRepository;
         $this->userRepository = $userRepository;
         $this->serializer = $serializer;
         $this->entityFetcher = $entityFetcher;
         $this->entityManager = $entityManager;
+        $this->contentRepository = $contentRepository;
     }
 
     #[Route('/admin/tuto', name: 'app_admin')]
@@ -83,6 +86,23 @@ class AdminController extends AbstractController
         if ($file) {
             $tuto->setImageFile($file);
             $this->entityManager->persist($tuto);
+            $this->entityManager->flush();
+
+            return $this->json(['message' => 'Image uploaded successfully.']);
+        }
+
+        return $this->json(['message' => 'No image uploaded.']);
+    }
+
+    #[Route('admin/upload-image/content/{id}', name:"upload_content_image", methods:["POST"])]
+    #[IsGranted("PUBLIC_ACCESS")]
+    public function uploadContentImage(Request $request, $id): JsonResponse
+    {
+        $content = $this->contentRepository->find($id);
+        $file = $request->files->get('image');
+        if ($file) {
+            $content->setImageFile($file);
+            $this->entityManager->persist($content);
             $this->entityManager->flush();
 
             return $this->json(['message' => 'Image uploaded successfully.']);
