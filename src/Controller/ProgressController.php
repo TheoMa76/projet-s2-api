@@ -60,12 +60,6 @@ public function createProgress(Request $request, SerializerInterface $serializer
         return new JsonResponse(['error' => 'Chapter not found'], 404);
     }
 
-    // Vérifier si le progress existe déjà
-    $existingProgress = $this->progressRepository->findOneBy([
-        'user' => $user,
-        'chapter' => $chapter,
-    ]);
-
         $entity = $serializer->deserialize($request->getContent(), Progress::class, 'json');
         $entity->setUser($user);
         $entity->setChapter($chapter);
