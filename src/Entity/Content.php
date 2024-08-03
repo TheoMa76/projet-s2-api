@@ -29,7 +29,7 @@ class Content
 
     #[ORM\Column]
     #[Groups(['content.index', 'tuto.show', 'tutorial:admin'])]
-    private ?int $position = null;
+    private ?string $position = null;
 
     #[ORM\Column(length: 1000, nullable: true)]
     #[Groups(['content.index', 'tuto.show', 'tutorial:admin'])]
@@ -78,12 +78,12 @@ class Content
         return $this;
     }
 
-    public function getPosition(): ?int
+    public function getPosition(): ?string
     {
         return $this->position;
     }
 
-    public function setPosition(int $position): static
+    public function setPosition(string $position): static
     {
         $this->position = $position;
 

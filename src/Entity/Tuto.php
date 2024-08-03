@@ -45,7 +45,7 @@ class Tuto
 
     #[ORM\Column]
     #[Groups(['tuto.index', 'tutorial:admin', 'tuto.preview'])]
-    private ?int $position = null;
+    private ?string $position = null;
 
     #[Vich\UploadableField(mapping:"tuto_image", fileNameProperty:"image")]
     private ?File $imageFile = null;
@@ -146,12 +146,12 @@ class Tuto
         return $this;
     }
 
-    public function getPosition(): ?int
+    public function getPosition(): ?string
     {
         return $this->position;
     }
 
-    public function setPosition(int $position): static
+    public function setPosition(string $position): static
     {
         $this->position = $position;
 
