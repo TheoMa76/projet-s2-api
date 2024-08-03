@@ -30,7 +30,7 @@ class Chapter
 
     #[ORM\Column]
     #[Groups(['chapter.index','tuto.show','tutorial:admin','tuto.preview'])]
-    private ?string $position = null;
+    private ?int $position = null;
 
     /**
      * @var Collection<int, Content>
@@ -92,12 +92,12 @@ class Chapter
         return $this;
     }
 
-    public function getPosition(): ?string
+    public function getPosition(): ?int
     {
         return $this->position;
     }
 
-    public function setPosition(string $position): static
+    public function setPosition(int $position): static
     {
         $this->position = $position;
 
